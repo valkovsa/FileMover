@@ -47,30 +47,43 @@ namespace FileMover
 
             foreach (var sFile in sourceFiles)
             {
-                string fName = Path.GetFileName(sFile);
-                var match = reg.Match(fName);
-
-                if (match.Success)
+                try
                 {
-                    string destFile;
+                    string fName = Path.GetFileName(sFile);
+                    var match = reg.Match(fName);
 
-                    var purposeDir = match.Value;
-                    if (destDirsNames.TryGetValue(purposeDir, out string dDir))
+                    if (match.Success)
                     {
-                        destFile = Path.Combine(dDir, fName);
+                        string dFile;
+
+                        var purposeDir = match.Value;
+                        if (destDirsNames.TryGetValue(purposeDir, out string dDir))
+                        {
+                            dFile = Path.Combine(dDir, fName);
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.Combine(destinationPath, "img"));
+
+                            dFile = Path.Combine(destinationPath, "img", fName);
+                        }
+
+                        Console.WriteLine($"Moving {sFile} to {dFile}", dFile);
+                        File.Move(sFile, dFile);
                     }
                     else
                     {
-                        destFile = Path.Combine(destinationPath, "img", fName);
+                        Console.WriteLine($"{sFile} couldn't parse file name");
                     }
-
-                    Console.WriteLine(destFile);
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"{sFile} couldn't parse name");
+                    Console.WriteLine(ex.Message);
                 }
             }
+
+            Console.WriteLine();
+            Console.WriteLine("All done! Enjoy :)");
 
             Console.ReadKey();
         }

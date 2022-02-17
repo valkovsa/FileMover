@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -14,6 +15,7 @@ namespace FileMover
             Console.WriteLine("Hi Bokas!! " + Environment.NewLine +
                               "First you need to choose the source directory, then chose the destination one" + Environment.NewLine);
 
+            // Get source path
             string sourcePath = GetSourcePath();
             if (string.IsNullOrEmpty(sourcePath))
             {
@@ -26,6 +28,7 @@ namespace FileMover
             var sourceDirectories = Directory.GetDirectories(sourcePath);
             Console.WriteLine(ShowDirectoryInfo("source", sourcePath, sourceDirectories, sourceFiles));
 
+            // Get destination path
             string destinationPath = GetDestinationPath();
             if (string.IsNullOrEmpty(destinationPath))
             {
@@ -35,9 +38,10 @@ namespace FileMover
             }
             var destFiles = Directory.GetFiles(destinationPath);
             var destDirs = Directory.GetDirectories(destinationPath);
-            var destDirsNames = destDirs.ToDictionary(d => Path.GetFileName(d));
+            var destDirsByNames = destDirs.ToDictionary(d => Path.GetFileName(d));
             Console.WriteLine(ShowDirectoryInfo("destination", destinationPath, destDirs, destFiles));
 
+            // Check
             Console.WriteLine("If everything is ok, tap \"y\" here, otherwise tap any key.");
 
             var choice = Console.ReadKey();
@@ -47,45 +51,10 @@ namespace FileMover
             }
             Console.WriteLine();
 
-            Regex reg = new Regex(@"^(.*?)(?=_)");
+            // Do action
+            MoveFiles(sourceFiles, destDirsByNames, destinationPath, (mes) => Console.WriteLine(mes));
 
-            foreach (var sFile in sourceFiles)
-            {
-                try
-                {
-                    string fName = Path.GetFileName(sFile);
-                    var match = reg.Match(fName);
-
-                    if (match.Success)
-                    {
-                        string dFile;
-
-                        var purposeDir = match.Value;
-                        if (destDirsNames.TryGetValue(purposeDir, out string dDir))
-                        {
-                            dFile = Path.Combine(dDir, fName);
-                        }
-                        else
-                        {
-                            Directory.CreateDirectory(Path.Combine(destinationPath, "img"));
-
-                            dFile = Path.Combine(destinationPath, "img", fName);
-                        }
-
-                        Console.WriteLine($"Moving {sFile} to {dFile}", dFile);
-                        File.Move(sFile, dFile);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{sFile} couldn't parse file name");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-            }
-
+            // End
             Console.WriteLine();
             Console.WriteLine("All done! Enjoy :)");
 
@@ -126,5 +95,47 @@ namespace FileMover
             $"The {direction} path is: {path}" + Environment.NewLine +
             $"There are {files.Length} files in the {direction} directory" + Environment.NewLine +
             $"There are {directories.Length} subdirectories in the {direction} directory" + Environment.NewLine;
+
+        private static void MoveFiles(string[] sourceFiles, Dictionary<string, string> destDirsByNames, string destinationPath, Action<string> showMessage)
+        {
+            Regex reg = new Regex(@"^(.*?)(?=_)");
+
+            foreach (var sFile in sourceFiles)
+            {
+                try
+                {
+                    string fName = Path.GetFileName(sFile);
+                    var match = reg.Match(fName);
+
+                    if (match.Success)
+                    {
+                        string dFile;
+
+                        var purposeDir = match.Value;
+                        if (destDirsByNames.TryGetValue(purposeDir, out string dDir))
+                        {
+                            dFile = Path.Combine(dDir, fName);
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.Combine(destinationPath, "img"));
+
+                            dFile = Path.Combine(destinationPath, "img", fName);
+                        }
+
+                        showMessage?.Invoke($"Moving {sFile} to {dFile}");
+                        File.Move(sFile, dFile);
+                    }
+                    else
+                    {
+                        showMessage?.Invoke($"{sFile} couldn't parse file name");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    showMessage?.Invoke(ex.Message);
+                }
+            }
+        }
     }
 }

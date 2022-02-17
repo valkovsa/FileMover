@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace FileMover
@@ -28,10 +30,47 @@ namespace FileMover
                 Console.WriteLine("You must choose the destination folder");
             }
             var destFiles = Directory.GetFiles(destinationPath);
-            var destDirectories = Directory.GetDirectories(destinationPath);
-            Console.WriteLine(ShowDirectoryInfo("destination", destinationPath, destDirectories, destFiles));
+            var destDirs = Directory.GetDirectories(destinationPath);
+            var destDirsNames = destDirs.ToDictionary(d => Path.GetFileName(d));
+            Console.WriteLine(ShowDirectoryInfo("destination", destinationPath, destDirs, destFiles));
 
             Console.WriteLine("If everything is ok, tap \"y\" here, otherwise tap any key.");
+
+            var choice = Console.ReadKey();
+            if (choice.Key != ConsoleKey.Y)
+            {
+                return;
+            }
+            Console.WriteLine();
+
+            Regex reg = new Regex(@"^(.*?)(?=_)");
+
+            foreach (var sFile in sourceFiles)
+            {
+                string fName = Path.GetFileName(sFile);
+                var match = reg.Match(fName);
+
+                if (match.Success)
+                {
+                    string destFile;
+
+                    var purposeDir = match.Value;
+                    if (destDirsNames.TryGetValue(purposeDir, out string dDir))
+                    {
+                        destFile = Path.Combine(dDir, fName);
+                    }
+                    else
+                    {
+                        destFile = Path.Combine(destinationPath, "img", fName);
+                    }
+
+                    Console.WriteLine(destFile);
+                }
+                else
+                {
+                    Console.WriteLine($"{sFile} couldn't parse name");
+                }
+            }
 
             Console.ReadKey();
         }

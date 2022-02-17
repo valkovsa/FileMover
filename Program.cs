@@ -18,6 +18,8 @@ namespace FileMover
             if (string.IsNullOrEmpty(sourcePath))
             {
                 Console.WriteLine("You must choose the source folder");
+                Console.ReadKey();
+                return;
             }
 
             var sourceFiles = Directory.GetFiles(sourcePath);
@@ -28,6 +30,8 @@ namespace FileMover
             if (string.IsNullOrEmpty(destinationPath))
             {
                 Console.WriteLine("You must choose the destination folder");
+                Console.ReadKey();
+                return;
             }
             var destFiles = Directory.GetFiles(destinationPath);
             var destDirs = Directory.GetDirectories(destinationPath);
